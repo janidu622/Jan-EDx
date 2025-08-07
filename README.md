@@ -187,6 +187,7 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 🆘 Support
 
 For support and queries, use our integrated chat assistant or contact us through the platform's contact form.
+Linkedin.com/in/janidusa
 
 ---
 
