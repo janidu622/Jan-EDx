@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Signature Verification System</title>
+    <!-- Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* Custom styles for the app */
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .result-bar-container {
+            height: 2rem; /* 32px */
+            background-color: #e5e7eb; /* gray-200 */
+            border-radius: 0.5rem; /* rounded-lg */
+            overflow: hidden;
+            transition: all 0.3s ease-in-out;
+        }
+        .result-bar {
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+            font-size: 0.875rem; /* text-sm */
+            transition: width 0.5s ease-in-out;
+        }
+        .real-bar {
+            background-color: #10b981; /* emerald-500 */
+        }
+        .fake-bar {
+            background-color: #ef4444; /* red-500 */
+        }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800 flex items-center justify-center min-h-screen">
+
+    <div class="bg-white p-8 rounded-2xl shadow-xl w-full max-w-md mx-4">
+        
+        <!-- Header -->
+        <div class="text-center mb-8">
+            <h1 class="text-3xl font-bold text-gray-900">Signature Verification</h1>
+            <p class="text-gray-500 mt-2">Upload a signature to determine if it's real or fake.</p>
+        </div>
+
+        <!-- File Upload Section -->
+        <div class="mb-6">
+            <label for="imageUpload" class="block mb-2 text-sm font-medium text-gray-700">Upload Signature Image</label>
+            <div class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md">
+                <div class="space-y-1 text-center">
+                    <svg class="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48" aria-hidden="true">
+                        <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                    </svg>
+                    <div class="flex text-sm text-gray-600">
+                        <label for="imageUpload" class="relative cursor-pointer bg-white rounded-md font-medium text-indigo-600 hover:text-indigo-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-indigo-500">
+                            <span>Upload a file</span>
+                            <input id="imageUpload" name="imageUpload" type="file" class="sr-only" accept="image/*">
+                        </label>
+                        <p class="pl-1">or drag and drop</p>
+                    </div>
+                    <p class="text-xs text-gray-500">PNG, JPG, GIF up to 10MB</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Image Preview -->
+        <div id="image-preview-container" class="mb-6 hidden">
+            <img id="imagePreview" src="#" alt="Image preview" class="rounded-lg shadow-md max-h-60 mx-auto"/>
+        </div>
+
+        <!-- Predict Button -->
+        <button id="predict-button" class="w-full bg-indigo-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition duration-300 ease-in-out disabled:bg-gray-400 mb-3" disabled>
+            Verifying...
+        </button>
+
+        <!-- Go Back Button -->
+        <button onclick="window.location.href='index.php'" class="w-full bg-gray-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition duration-300 ease-in-out">
+            <svg class="inline-block w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+            </svg>
+            Go Back to Home
+        </button>
+
+        <!-- Results Section -->
+        <div id="label-container" class="mt-8 space-y-4"></div>
+        
+        <!-- Loading Spinner -->
+        <div id="loading" class="text-center mt-4 hidden">
+            <svg class="animate-spin h-8 w-8 text-indigo-600 mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            <p class="text-gray-500 mt-2">Analyzing signature...</p>
+        </div>
+
+    </div>
+
+    <!-- TensorFlow.js and Teachable Machine libraries -->
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest/dist/teachablemachine-image.min.js"></script>
+
+    <script type="text/javascript">
+        // --- PASTE YOUR MODEL URL HERE ---
+        const URL = "https://teachablemachine.withgoogle.com/models/nZuSBAkoo/"; // IMPORTANT: Replace this with your shareable link from Teachable Machine
+
+        let model, labelContainer, maxPredictions;
+
+        const predictButton = document.getElementById('predict-button');
+        const imageUpload = document.getElementById('imageUpload');
+        const imagePreview = document.getElementById('imagePreview');
+        const imagePreviewContainer = document.getElementById('image-preview-container');
+        const loadingSpinner = document.getElementById('loading');
+
+        // Load the image model and setup the webcam
+        async function init() {
+            if (!URL.startsWith("https://teachablemachine.withgoogle.com/")) {
+                predictButton.textContent = "Please Provide a Valid Model URL";
+                predictButton.disabled = true;
+                return;
+            }
+            const modelURL = URL + "model.json";
+            const metadataURL = URL + "metadata.json";
+
+            try {
+                model = await tmImage.load(modelURL, metadataURL);
+                maxPredictions = model.getTotalClasses();
+                labelContainer = document.getElementById("label-container");
+                predictButton.disabled = false;
+                predictButton.textContent = "Verify Signature";
+            } catch (error) {
+                console.error("Error loading model:", error);
+                predictButton.textContent = "Model Loading Failed";
+                predictButton.disabled = true;
+            }
+        }
+      
+
+        // Handle file upload
+        imageUpload.addEventListener('change', (event) => {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    imagePreview.src = e.target.result;
+                    imagePreviewContainer.classList.remove('hidden');
+                    labelContainer.innerHTML = ''; // Clear previous results
+                }
+                reader.readAsDataURL(file);
+            }
+        });
+        
+        // Add click event listener to the button
+        predictButton.addEventListener('click', () => predict());
+
+
+        // Run the prediction
+        async function predict() {
+            if (!model) {
+                console.log("Model not loaded yet");
+                return;
+            }
+            
+            loadingSpinner.classList.remove('hidden');
+            predictButton.classList.add('hidden');
+            labelContainer.innerHTML = '';
+
+            // predict can take in an image, video or canvas html element
+            const prediction = await model.predict(imagePreview);
+            
+            // Sort predictions by probability
+            prediction.sort((a, b) => b.probability - a.probability);
+            
+            for (let i = 0; i < maxPredictions; i++) {
+                const classPrediction = prediction[i].className;
+                const probability = prediction[i].probability;
+                
+                const resultContainer = document.createElement("div");
+                resultContainer.classList.add("result-item", "mb-2");
+                
+                const labelText = document.createElement("div");
+                labelText.classList.add("flex", "justify-between", "text-sm", "font-medium", "mb-1");
+                
+                const predictionName = document.createElement("span");
+                predictionName.textContent = classPrediction;
+
+                const predictionValue = document.createElement("span");
+                predictionValue.classList.add("text-gray-500");
+                // *** SYNTAX ERROR FIXED HERE ***
+                // Correctly formats the percentage string. e.g., "99%"
+                predictionValue.textContent = (probability * 100).toFixed(0) + '%';
+
+                labelText.appendChild(predictionName);
+                labelText.appendChild(predictionValue);
+                
+                const barContainer = document.createElement("div");
+                barContainer.classList.add("result-bar-container");
+                
+                const bar = document.createElement("div");
+                bar.classList.add("result-bar");
+                bar.style.width = (probability * 100) + "%";
+
+                if (classPrediction.toLowerCase().includes('real')) {
+                    bar.classList.add('real-bar');
+                } else {
+                    bar.classList.add('fake-bar');
+                }
+                
+                barContainer.appendChild(bar);
+                resultContainer.appendChild(labelText);
+                resultContainer.appendChild(barContainer);
+                labelContainer.appendChild(resultContainer);
+            }
+            
+            loadingSpinner.classList.add('hidden');
+            // *** UX IMPROVEMENT HERE ***
+            // Makes the button visible again after prediction is complete.
+            predictButton.classList.remove('hidden');
+        }
+
+        // Initialize the application
+        init();
+    </script>
+    
+
+</body>
+</html>

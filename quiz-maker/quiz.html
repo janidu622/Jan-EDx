@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Quiz Maker</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 800px;
+            padding: 40px;
+            transition: all 0.3s ease;
+        }
+
+        .container:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.15);
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #555;
+            font-size: 1.1em;
+        }
+
+        textarea, input, select {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e1e5e9;
+            border-radius: 12px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            background: rgba(255, 255, 255, 0.8);
+        }
+
+        textarea:focus, input:focus, select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+            transform: translateY(-2px);
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 120px;
+        }
+
+        .form-row {
+            display: flex;
+            gap: 20px;
+        }
+
+        .form-row .form-group {
+            flex: 1;
+        }
+
+        button {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 12px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            width: 100%;
+            margin-top: 10px;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            margin: 0 auto 15px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .quiz-container {
+            display: none;
+            margin-top: 30px;
+        }
+
+        .question {
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 20px;
+            border: 2px solid #e1e5e9;
+            transition: all 0.3s ease;
+        }
+
+        .question:hover {
+            border-color: #667eea;
+            transform: translateY(-2px);
+        }
+
+        .question h3 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 1.2em;
+        }
+
+        .options {
+            display: grid;
+            gap: 10px;
+        }
+
+        .option {
+            display: flex;
+            align-items: center;
+            padding: 12px;
+            background: rgba(255, 255, 255, 0.8);
+            border: 2px solid #e1e5e9;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .option:hover {
+            background: rgba(102, 126, 234, 0.1);
+            border-color: #667eea;
+        }
+
+        .option input[type="radio"] {
+            width: auto;
+            margin-right: 12px;
+        }
+
+        .results {
+            display: none;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 15px;
+            padding: 30px;
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        .score {
+            font-size: 3em;
+            font-weight: bold;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 15px;
+        }
+
+        .score-text {
+            font-size: 1.3em;
+            color: #555;
+            margin-bottom: 20px;
+        }
+
+        .restart-btn {
+            background: linear-gradient(135deg, #28a745, #20c997);
+            margin-top: 15px;
+        }
+
+        .error {
+            background: #ff6b6b;
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 15px 0;
+            display: none;
+        }
+
+        @media (max-width: 768px) {
+            .form-row {
+                flex-direction: column;
+                gap: 0;
+            }
+            
+            .container {
+                padding: 20px;
+            }
+            
+            h1 {
+                font-size: 2em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧠 AI Quiz Maker</h1>
+        
+        <div id="setup-form">
+            <div class="form-group">
+                <label for="topic">Topic or Text Content:</label>
+                <textarea id="topic" placeholder="Enter the topic or paste your text content here. The AI will generate quiz questions based on this input..."></textarea>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="numQuestions">Number of Questions:</label>
+                    <input type="number" id="numQuestions" min="1" max="20" value="5">
+                </div>
+                
+                <div class="form-group">
+                    <label for="difficulty">Difficulty Level:</label>
+                    <select id="difficulty">
+                        <option value="easy">Easy</option>
+                        <option value="medium" selected>Medium</option>
+                        <option value="hard">Hard</option>
+                    </select>
+                </div>
+            </div>
+            
+            <button onclick="generateQuiz()">Generate Quiz</button>
+            <br>
+            <button  onclick="window.location.href='../index.php'">Go Back</button>
+        </div>
+
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p>AI is generating your quiz questions...</p>
+        </div>
+
+        <div class="error" id="error"></div>
+
+        <div class="quiz-container" id="quiz-container">
+            <div id="questions"></div>
+            <button onclick="submitQuiz()">Submit Quiz</button>
+        </div>
+
+        <div class="results" id="results">
+            <div class="score" id="score"></div>
+            <div class="score-text" id="score-text"></div>
+            <button class="restart-btn" onclick="restartQuiz()">Create New Quiz</button>
+        </div>
+    </div>
+
+    <script>
+        let currentQuiz = [];
+        let userAnswers = [];
+
+        async function generateQuiz() {
+            const topic = document.getElementById('topic').value.trim();
+            const numQuestions = parseInt(document.getElementById('numQuestions').value);
+            const difficulty = document.getElementById('difficulty').value;
+
+            if (!topic) {
+                showError('Please enter a topic or text content.');
+                return;
+            }
+
+            showLoading(true);
+            hideError();
+
+            try {
+                const prompt = `Create ${numQuestions} multiple choice questions about the following topic/content with ${difficulty} difficulty level. Each question should have 4 options (A, B, C, D) with only one correct answer.
+
+Topic/Content: ${topic}
+
+Format your response as a JSON array where each question object has:
+{
+  "question": "Question text here",
+  "options": ["Option A", "Option B", "Option C", "Option D"],
+  "correct": 0
+}
+
+The "correct" field should be the index (0-3) of the correct answer. Make sure questions are relevant to the provided content and test understanding at the ${difficulty} level.`;
+
+                const response = await fetch('http://localhost:11434/api/generate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        model: 'phi',
+                        prompt: prompt,
+                        stream: false
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                const quizText = data.response;
+
+                // Try to extract JSON from the response
+                let quizData;
+                try {
+                    // Look for JSON array in the response
+                    const jsonMatch = quizText.match(/\[[\s\S]*\]/);
+                    if (jsonMatch) {
+                        quizData = JSON.parse(jsonMatch[0]);
+                    } else {
+                        throw new Error('No JSON found in response');
+                    }
+                } catch (parseError) {
+                    // If JSON parsing fails, try to parse a more flexible format
+                    quizData = parseQuizFromText(quizText, numQuestions);
+                }
+
+                if (!Array.isArray(quizData) || quizData.length === 0) {
+                    throw new Error('Invalid quiz format received');
+                }
+
+                currentQuiz = quizData;
+                displayQuiz();
+
+            } catch (error) {
+                console.error('Error generating quiz:', error);
+                showError(`Failed to generate quiz: ${error.message}. Make sure Ollama is running on localhost:11434 and the 'phi' model is installed.`);
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        function parseQuizFromText(text, numQuestions) {
+            // Fallback parser for non-JSON responses
+            const questions = [];
+            const lines = text.split('\n');
+            
+            let currentQuestion = null;
+            let currentOptions = [];
+            
+            for (let line of lines) {
+                line = line.trim();
+                
+                if (line.match(/^\d+\.|^Question/i)) {
+                    if (currentQuestion && currentOptions.length >= 4) {
+                        questions.push({
+                            question: currentQuestion,
+                            options: currentOptions.slice(0, 4),
+                            correct: 0 // Default to first option
+                        });
+                    }
+                    currentQuestion = line.replace(/^\d+\.?\s*/, '').replace(/^Question\s*\d*:?\s*/i, '');
+                    currentOptions = [];
+                } else if (line.match(/^[A-D][\)\.]/)) {
+                    currentOptions.push(line.replace(/^[A-D][\)\.]\s*/, ''));
+                }
+            }
+            
+            if (currentQuestion && currentOptions.length >= 4) {
+                questions.push({
+                    question: currentQuestion,
+                    options: currentOptions.slice(0, 4),
+                    correct: 0
+                });
+            }
+            
+            return questions.slice(0, numQuestions);
+        }
+
+        function displayQuiz() {
+            const questionsContainer = document.getElementById('questions');
+            questionsContainer.innerHTML = '';
+            userAnswers = new Array(currentQuiz.length).fill(null);
+
+            currentQuiz.forEach((q, index) => {
+                const questionDiv = document.createElement('div');
+                questionDiv.className = 'question';
+                
+                questionDiv.innerHTML = `
+                    <h3>Question ${index + 1}: ${q.question}</h3>
+                    <div class="options">
+                        ${q.options.map((option, optIndex) => `
+                            <label class="option">
+                                <input type="radio" name="q${index}" value="${optIndex}" onchange="saveAnswer(${index}, ${optIndex})">
+                                <span>${String.fromCharCode(65 + optIndex)}. ${option}</span>
+                            </label>
+                        `).join('')}
+                    </div>
+                `;
+                
+                questionsContainer.appendChild(questionDiv);
+            });
+
+            document.getElementById('setup-form').style.display = 'none';
+            document.getElementById('quiz-container').style.display = 'block';
+        }
+
+        function saveAnswer(questionIndex, answerIndex) {
+            userAnswers[questionIndex] = answerIndex;
+        }
+
+        function submitQuiz() {
+            const unanswered = userAnswers.findIndex(answer => answer === null);
+            if (unanswered !== -1) {
+                showError(`Please answer question ${unanswered + 1} before submitting.`);
+                return;
+            }
+
+            let correct = 0;
+            userAnswers.forEach((answer, index) => {
+                if (answer === currentQuiz[index].correct) {
+                    correct++;
+                }
+            });
+
+            const percentage = Math.round((correct / currentQuiz.length) * 100);
+            
+            document.getElementById('score').textContent = `${percentage}%`;
+            document.getElementById('score-text').textContent = `You got ${correct} out of ${currentQuiz.length} questions correct!`;
+            
+            document.getElementById('quiz-container').style.display = 'none';
+            document.getElementById('results').style.display = 'block';
+        }
+
+        function restartQuiz() {
+            document.getElementById('setup-form').style.display = 'block';
+            document.getElementById('quiz-container').style.display = 'none';
+            document.getElementById('results').style.display = 'none';
+            hideError();
+            currentQuiz = [];
+            userAnswers = [];
+        }
+
+        function showLoading(show) {
+            document.getElementById('loading').style.display = show ? 'block' : 'none';
+        }
+
+        function showError(message) {
+            const errorDiv = document.getElementById('error');
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+        }
+
+        function hideError() {
+            document.getElementById('error').style.display = 'none';
+        }
+    </script>
+</body>
+</html>

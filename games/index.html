@@ -1,0 +1,691 @@
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cosmic Rescue - Save the Astronomers</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Courier New', monospace;
+            background: radial-gradient(ellipse at center, #1a1a2e 0%, #16213e 50%, #0f0f23 100%);
+            color: white;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .stars {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .star {
+            position: absolute;
+            background: white;
+            border-radius: 50%;
+            animation: twinkle 2s infinite alternate;
+        }
+
+        @keyframes twinkle {
+            0% { opacity: 0.3; transform: scale(0.8); }
+            100% { opacity: 1; transform: scale(1.2); }
+        }
+
+        canvas {
+            border: 2px solid #00ffff;
+            border-radius: 10px;
+            background: rgba(0, 0, 0, 0.3);
+            cursor: crosshair;
+            z-index: 5;
+            position: relative;
+        }
+
+        .ui {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            z-index: 10;
+            color: #00ffff;
+            font-size: 18px;
+            text-shadow: 0 0 10px #00ffff;
+        }
+
+        .level-display {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            z-index: 10;
+            color: #ff6b6b;
+            font-size: 18px;
+            text-shadow: 0 0 10px #ff6b6b;
+        }
+
+        .instructions {
+            position: absolute;
+            bottom: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 10;
+            color: #ffff00;
+            font-size: 14px;
+            text-align: center;
+        }
+
+        .modal {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.9);
+            border: 2px solid #00ffff;
+            border-radius: 15px;
+            padding: 30px;
+            text-align: center;
+            z-index: 100;
+            display: none;
+        }
+
+        .btn {
+            background: linear-gradient(45deg, #00ffff, #0066cc);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            margin: 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.3s;
+        }
+
+        .btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 20px #00ffff;
+        }
+
+        .launcher {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            width: 60px;
+            height: 60px;
+            background: radial-gradient(circle, #ff6b35 0%, #f7931e 70%);
+            border-radius: 50%;
+            border: 3px solid #ffcd3c;
+            z-index: 10;
+            cursor: pointer;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+
+        .trajectory {
+            position: absolute;
+            pointer-events: none;
+            z-index: 8;
+        }
+
+        .back-button {
+            position: absolute;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 15;
+        }
+
+        .back-btn {
+            background: linear-gradient(45deg, #e74c3c, #c0392b);
+            font-size: 14px;
+            padding: 8px 16px;
+            border-radius: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .back-btn:hover {
+            background: linear-gradient(45deg, #c0392b, #a93226);
+            transform: scale(1.05);
+            box-shadow: 0 0 15px rgba(231, 76, 60, 0.5);
+        }
+    </style>
+</head>
+<body>
+    <!-- Stars background -->
+    <div class="stars" id="starsContainer"></div>
+
+    <!-- Game canvas -->
+    <canvas id="gameCanvas" width="1000" height="600"></canvas>
+
+    <!-- UI Elements -->
+    <div class="ui">
+        <div>Score: <span id="score">0</span></div>
+        <div>Rockets: <span id="rockets">5</span></div>
+        <div>Saved: <span id="saved">0</span>/<span id="target">3</span></div>
+    </div>
+
+    <div class="level-display">
+        Level: <span id="level">1</span>
+    </div>
+
+    <div class="instructions">
+        Click launcher and drag to aim • Release to fire rocket • Save all astronomers!
+    </div>
+
+    <!-- Go Back Button -->
+    <div class="back-button" id="backButton">
+        <button class="btn back-btn" onclick="goBackToMainSite()">
+            Go Back 
+        </button>
+    </div>
+
+    <!-- Launcher -->
+    <div class="launcher" id="launcher"></div>
+
+    <!-- Game Over Modal -->
+    <div class="modal" id="gameOverModal">
+        <h2>Mission Failed!</h2>
+        <p>The astronomers need your help!</p>
+        <button class="btn" onclick="restartLevel()">Try Again</button>
+        <button class="btn" onclick="resetGame()">Restart Game</button>
+    </div>
+
+    <!-- Level Complete Modal -->
+    <div class="modal" id="levelCompleteModal">
+        <h2>Mission Success!</h2>
+        <p>All astronomers rescued!</p>
+        <div id="scoreDisplay"></div>
+        <button class="btn" onclick="nextLevel()">Next Level</button>
+        <button class="btn" onclick="resetGame()">Play Again</button>
+    </div>
+
+    <script>
+        // Game variables
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        let game = {
+            level: 1,
+            score: 0,
+            rockets: 5,
+            saved: 0,
+            target: 3,
+            isAiming: false,
+            aimStart: {x: 0, y: 0},
+            aimEnd: {x: 0, y: 0},
+            objects: [],
+            particles: [],
+            projectiles: []
+        };
+
+        // Game object classes
+        class Rocket {
+            constructor(x, y, vx, vy) {
+                this.x = x;
+                this.y = y;
+                this.vx = vx;
+                this.vy = vy;
+                this.size = 8;
+                this.trail = [];
+                this.active = true;
+            }
+
+            update() {
+                if (!this.active) return;
+
+                this.trail.push({x: this.x, y: this.y});
+                if (this.trail.length > 15) this.trail.shift();
+
+                this.x += this.vx;
+                this.y += this.vy;
+                this.vy += 0.2; // gravity
+
+                // Remove if off screen
+                if (this.x < 0 || this.x > canvas.width || this.y > canvas.height) {
+                    this.active = false;
+                }
+            }
+
+            draw() {
+                if (!this.active) return;
+
+                // Draw trail
+                ctx.strokeStyle = '#ff6b35';
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+                for (let i = 0; i < this.trail.length; i++) {
+                    const alpha = i / this.trail.length;
+                    ctx.globalAlpha = alpha;
+                    if (i === 0) {
+                        ctx.moveTo(this.trail[i].x, this.trail[i].y);
+                    } else {
+                        ctx.lineTo(this.trail[i].x, this.trail[i].y);
+                    }
+                }
+                ctx.stroke();
+                ctx.globalAlpha = 1;
+
+                // Draw rocket
+                ctx.fillStyle = '#ff6b35';
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Rocket flame
+                ctx.fillStyle = '#ffcd3c';
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size * 0.6, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        class AlienShip {
+            constructor(x, y) {
+                this.x = x;
+                this.y = y;
+                this.width = 50;
+                this.height = 30;
+                this.health = 1;
+                this.destroyed = false;
+                this.bobOffset = Math.random() * Math.PI * 2;
+                this.originalY = y;
+            }
+
+            update() {
+                this.y = this.originalY + Math.sin(Date.now() * 0.003 + this.bobOffset) * 10;
+            }
+
+            draw() {
+                if (this.destroyed) return;
+
+                ctx.save();
+                ctx.translate(this.x + this.width/2, this.y + this.height/2);
+
+                // Ship body
+                ctx.fillStyle = '#8e44ad';
+                ctx.beginPath();
+                ctx.ellipse(0, 0, 25, 15, 0, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Ship dome
+                ctx.fillStyle = '#3498db';
+                ctx.beginPath();
+                ctx.ellipse(0, -5, 12, 10, 0, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Lights
+                ctx.fillStyle = '#e74c3c';
+                ctx.beginPath();
+                ctx.arc(-15, 0, 3, 0, Math.PI * 2);
+                ctx.arc(15, 0, 3, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.restore();
+            }
+
+            takeDamage() {
+                this.health--;
+                if (this.health <= 0) {
+                    this.destroyed = true;
+                    createExplosion(this.x + this.width/2, this.y + this.height/2);
+                    game.score += 100;
+                    return true;
+                }
+                return false;
+            }
+
+            getBounds() {
+                return {
+                    x: this.x,
+                    y: this.y,
+                    width: this.width,
+                    height: this.height
+                };
+            }
+        }
+
+        class Astronomer {
+            constructor(x, y) {
+                this.x = x;
+                this.y = y;
+                this.width = 25;
+                this.height = 35;
+                this.saved = false;
+                this.bobOffset = Math.random() * Math.PI * 2;
+                this.originalY = y;
+            }
+
+            update() {
+                this.y = this.originalY + Math.sin(Date.now() * 0.002 + this.bobOffset) * 5;
+            }
+
+            draw() {
+                if (this.saved) return;
+
+                ctx.save();
+                ctx.translate(this.x + this.width/2, this.y + this.height/2);
+
+                // Body
+                ctx.fillStyle = '#ecf0f1';
+                ctx.fillRect(-8, -5, 16, 25);
+
+                // Head
+                ctx.fillStyle = '#f39c12';
+                ctx.beginPath();
+                ctx.arc(0, -15, 8, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Helmet
+                ctx.strokeStyle = '#3498db';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.arc(0, -15, 10, 0, Math.PI * 2);
+                ctx.stroke();
+
+                // SOS
+                ctx.fillStyle = '#e74c3c';
+                ctx.font = '10px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText('SOS', 0, -25);
+
+                ctx.restore();
+            }
+
+            rescue() {
+                if (!this.saved) {
+                    this.saved = true;
+                    game.saved++;
+                    game.score += 300;
+                    createRescueEffect(this.x + this.width/2, this.y + this.height/2);
+                    return true;
+                }
+                return false;
+            }
+
+            getBounds() {
+                return {
+                    x: this.x,
+                    y: this.y,
+                    width: this.width,
+                    height: this.height
+                };
+            }
+        }
+
+        class Particle {
+            constructor(x, y, color) {
+                this.x = x;
+                this.y = y;
+                this.vx = (Math.random() - 0.5) * 8;
+                this.vy = (Math.random() - 0.5) * 8;
+                this.color = color;
+                this.life = 30;
+                this.size = Math.random() * 4 + 2;
+            }
+
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+                this.vy += 0.1;
+                this.life--;
+            }
+
+            draw() {
+                ctx.save();
+                ctx.globalAlpha = this.life / 30;
+                ctx.fillStyle = this.color;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+            }
+        }
+
+        // Game functions
+        function createStars() {
+            const container = document.getElementById('starsContainer');
+            for (let i = 0; i < 100; i++) {
+                const star = document.createElement('div');
+                star.className = 'star';
+                star.style.left = Math.random() * 100 + '%';
+                star.style.top = Math.random() * 100 + '%';
+                star.style.width = (Math.random() * 3 + 1) + 'px';
+                star.style.height = star.style.width;
+                star.style.animationDelay = Math.random() * 2 + 's';
+                container.appendChild(star);
+            }
+        }
+
+        function createExplosion(x, y) {
+            for (let i = 0; i < 10; i++) {
+                game.particles.push(new Particle(x, y, '#ff6b35'));
+            }
+        }
+
+        function createRescueEffect(x, y) {
+            for (let i = 0; i < 8; i++) {
+                game.particles.push(new Particle(x, y, '#2ecc71'));
+            }
+        }
+
+        function setupLevel() {
+            game.objects = [];
+            game.projectiles = [];
+            game.particles = [];
+            game.saved = 0;
+            game.rockets = 5;
+
+            // Level configurations
+            const levels = [
+                {aliens: 2, astronomers: 3},
+                {aliens: 3, astronomers: 4},
+                {aliens: 4, astronomers: 5},
+                {aliens: 5, astronomers: 6}
+            ];
+
+            const config = levels[Math.min(game.level - 1, levels.length - 1)];
+            game.target = config.astronomers;
+
+            // Create aliens
+            for (let i = 0; i < config.aliens; i++) {
+                const x = 300 + i * 120;
+                const y = 100 + Math.random() * 200;
+                game.objects.push(new AlienShip(x, y));
+            }
+
+            // Create astronomers
+            for (let i = 0; i < config.astronomers; i++) {
+                const x = 350 + i * 100;
+                const y = 350 + Math.random() * 150;
+                game.objects.push(new Astronomer(x, y));
+            }
+
+            updateUI();
+        }
+
+        function updateUI() {
+            document.getElementById('score').textContent = game.score;
+            document.getElementById('rockets').textContent = game.rockets;
+            document.getElementById('saved').textContent = game.saved;
+            document.getElementById('target').textContent = game.target;
+            document.getElementById('level').textContent = game.level;
+        }
+
+        function checkCollisions() {
+            game.projectiles.forEach(rocket => {
+                if (!rocket.active) return;
+
+                game.objects.forEach(obj => {
+                    if (obj.destroyed || obj.saved) return;
+
+                    const bounds = obj.getBounds();
+                    if (rocket.x > bounds.x && rocket.x < bounds.x + bounds.width &&
+                        rocket.y > bounds.y && rocket.y < bounds.y + bounds.height) {
+                        
+                        rocket.active = false;
+                        
+                        if (obj instanceof AlienShip) {
+                            obj.takeDamage();
+                        } else if (obj instanceof Astronomer) {
+                            obj.rescue();
+                        }
+                    }
+                });
+            });
+        }
+
+        function checkWinLose() {
+            const activeRockets = game.projectiles.filter(r => r.active).length;
+            
+            if (game.saved >= game.target) {
+                // Win
+                setTimeout(() => {
+                    const bonusPoints = game.rockets * 50;
+                    document.getElementById('scoreDisplay').innerHTML = 
+                        '<div><p>Score: ' + game.score + '</p><p>Bonus: ' + bonusPoints + '</p></div>';
+                    game.score += bonusPoints;
+                    document.getElementById('levelCompleteModal').style.display = 'block';
+                }, 1000);
+            } else if (game.rockets === 0 && activeRockets === 0) {
+                // Lose
+                setTimeout(() => {
+                    document.getElementById('gameOverModal').style.display = 'block';
+                }, 1000);
+            }
+        }
+
+        function gameLoop() {
+            // Clear canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Update and draw objects
+            game.objects.forEach(obj => {
+                obj.update();
+                obj.draw();
+            });
+
+            // Update and draw projectiles
+            game.projectiles = game.projectiles.filter(rocket => {
+                rocket.update();
+                rocket.draw();
+                return rocket.active;
+            });
+
+            // Update and draw particles
+            game.particles = game.particles.filter(particle => {
+                particle.update();
+                particle.draw();
+                return particle.life > 0;
+            });
+
+            // Draw aim line
+            if (game.isAiming) {
+                ctx.strokeStyle = '#00ffff';
+                ctx.lineWidth = 2;
+                ctx.setLineDash([5, 5]);
+                ctx.beginPath();
+                ctx.moveTo(50, canvas.height - 50);
+                ctx.lineTo(game.aimEnd.x, game.aimEnd.y);
+                ctx.stroke();
+                ctx.setLineDash([]);
+            }
+
+            checkCollisions();
+            checkWinLose();
+            updateUI();
+
+            requestAnimationFrame(gameLoop);
+        }
+
+        // Event handlers
+        let launcher = document.getElementById('launcher');
+
+        launcher.addEventListener('mousedown', (e) => {
+            if (game.rockets > 0) {
+                game.isAiming = true;
+                game.aimStart = {x: 50, y: canvas.height - 50};
+                e.preventDefault();
+            }
+        });
+
+        document.addEventListener('mousemove', (e) => {
+            if (game.isAiming) {
+                const rect = canvas.getBoundingClientRect();
+                game.aimEnd = {
+                    x: e.clientX - rect.left,
+                    y: e.clientY - rect.top
+                };
+            }
+        });
+
+        document.addEventListener('mouseup', (e) => {
+            if (game.isAiming && game.rockets > 0) {
+                const dx = game.aimEnd.x - game.aimStart.x;
+                const dy = game.aimEnd.y - game.aimStart.y;
+                const power = Math.min(Math.sqrt(dx * dx + dy * dy) / 10, 15);
+                
+                const rocket = new Rocket(
+                    50, canvas.height - 50,
+                    dx / 10, dy / 10
+                );
+                
+                game.projectiles.push(rocket);
+                game.rockets--;
+                game.isAiming = false;
+            }
+        });
+
+        // Game control functions
+        function restartLevel() {
+            document.getElementById('gameOverModal').style.display = 'none';
+            setupLevel();
+        }
+
+        function nextLevel() {
+            document.getElementById('levelCompleteModal').style.display = 'none';
+            game.level++;
+            setupLevel();
+        }
+
+        function resetGame() {
+            document.getElementById('gameOverModal').style.display = 'none';
+            document.getElementById('levelCompleteModal').style.display = 'none';
+            game.level = 1;
+            game.score = 0;
+            setupLevel();
+        }
+
+        // Go back to main site function
+        function goBackToMainSite() {
+            // Option 1: Go back in browser history
+            if (window.history.length > 1) {
+                window.history.back();
+            } else {
+                // Option 2: Redirect to your main site URL
+                window.location.href = '../index.html';
+               
+            }
+        }
+
+        // Initialize game
+        createStars();
+        setupLevel();
+        gameLoop();
+    </script>
+</body>
+</html>
