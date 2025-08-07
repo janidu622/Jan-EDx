@@ -183,12 +183,13 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 👨‍💻 Developer
 
 **GitHub**: [@janidu622](https://github.com/janidu622)
+**Linekdin**:[@janidusa](https://github.com/janidusa)
 
 🆘 Support
 
 For support and queries, use our integrated chat assistant or contact us through the platform's contact form.
-Linkedin.com/in/janidusa
+
 
 ---
 
-*JanEDx - Empowering Education for Sri Lankan students 🚀
+JanEDx - Empowering Education for Sri Lankan students 🚀
