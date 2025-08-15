@@ -16,7 +16,7 @@ if (!$course_id) {
     exit();
 }
 
-// Verify student is enrolled in this course
+// Verify student enroll of students 
 $stmt = $pdo->prepare("
     SELECT c.*, ce.enrolled_at 
     FROM courses c 
