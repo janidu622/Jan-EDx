@@ -47,7 +47,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_assignment']))
     $assignment = $stmt->fetch();
     
     if ($assignment) {
-        // Check if already submitted
+        // Check if submit already 
         $stmt = $pdo->prepare("SELECT id FROM assignment_submissions WHERE assignment_id = ? AND student_id = ?");
         $stmt->execute([$assignment_id, $_SESSION['user_id']]);
         $existing = $stmt->fetch();
