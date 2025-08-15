@@ -7,7 +7,7 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] != 'student') {
     exit;
 }
 
-// Handle course enrollment
+// Handle enrollment of course 
 if (isset($_POST['enroll_course'])) {
     $course_id = $_POST['course_id'];
     $semester = $_POST['semester'];
