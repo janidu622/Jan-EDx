@@ -304,7 +304,7 @@ $courses = $stmt->fetchAll();
                     </button>
                     
                     
-                    <button class="bts1" onclick="window.location.href='jandx_lms/auth/login.php'"> <span>Join Us</span>
+                    <button class="bts1" onclick="window.location.href='janedx-plus/login.php'"> <span>Join Us</span>
                         </button>
                 </div>
             </div>
