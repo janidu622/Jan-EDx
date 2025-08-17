@@ -769,7 +769,7 @@ $courses = $stmt->fetchAll();
         chat-title="JanEDx"
         agent-id="52422a8d-31ed-4972-b02c-ca29d86309e5"
         language-code="en"
-        chat-icon="icon1.jpg">
+        chat-icon="icon.png">
     </df-messenger>
 
     <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script>
